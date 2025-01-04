@@ -1,4 +1,0 @@
-/home/light/Documents/KatUltra/Katplusplus/build/CMakeFiles/kat_compiler.dir
-/home/light/Documents/KatUltra/Katplusplus/build/CMakeFiles/run.dir
-/home/light/Documents/KatUltra/Katplusplus/build/CMakeFiles/edit_cache.dir
-/home/light/Documents/KatUltra/Katplusplus/build/CMakeFiles/rebuild_cache.dir
