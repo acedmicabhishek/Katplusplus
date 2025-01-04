@@ -7,7 +7,7 @@ A high level programing language designed so a new born kid can understand or wr
 2. write your code 
 3. pull request
 
-# syntex
+# syntax
 
 ```cpp
 start {
