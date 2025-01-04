@@ -1,20 +1,3 @@
 start {
-    intbox x = 5;
-    intbox y = 10;
-    intbox result;
-
-    out << "Enter a number: " endl;
-    in >> x endl;
-
-    result = x + y;
-
-    out << "The result is: " << result endl;
-
-    if result > 10 {
-        out << "The result is greater than 10." endl;
-    } else {
-        out << "The result is 10 or less." endl;
-    }
-
     close
 }

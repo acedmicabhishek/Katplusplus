@@ -5,14 +5,14 @@
 #include <stdexcept>
 #include <regex>
 #include <iostream>
-#include <algorithm>
+#include <unordered_set>
+#include <cctype>
 
-// Token structure
 struct Token {
     std::string type;  // Type of the token (e.g., "identifier", "keyword", "literal", "operator")
     std::string value; // Actual value of the token
-    int line;          // Line number in the source code
-    int column;        // Column number in the line
+    int line;          
+    int column;        
 };
 
 class TokenStore {
@@ -26,11 +26,11 @@ private:
         tokens.push_back({type, value, lineNumber, columnNumber});
     }
 
-    const std::vector<std::string> keywords = {
+    const std::unordered_set<std::string> keywords = {
         "start", "close", "intbox", "floatbox", "stringbox", "charbox",
         "boolbox", "out", "in", "if", "else", "true", "false", "endl"
     };
-    const std::vector<std::string> operators = {
+    const std::unordered_set<std::string> operators = {
         "+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "<<", ">>", "="
     };
 
@@ -40,7 +40,7 @@ private:
     const std::regex floatRegex = std::regex(R"(\d+\.\d+)");
     const std::regex stringLiteralRegex = std::regex(R"("(\\.|[^"\\])*")");
     const std::regex charLiteralRegex = std::regex(R"('(\\.|[^'\\])')");
-    
+
     // Skipping comments
     void skipComments(const std::string& source, size_t& pos) {
         if (source.substr(pos, 2) == "//") {
@@ -95,7 +95,7 @@ public:
                 while (pos < length && (std::isalnum(source[pos]) || source[pos] == '_')) pos++;
                 std::string word = source.substr(start, pos - start);
                 columnNumber += (pos - start);
-                if (std::find(keywords.begin(), keywords.end(), word) != keywords.end()) {
+                if (keywords.find(word) != keywords.end()) {
                     addToken("keyword", word);
                 } else {
                     addToken("identifier", word);
@@ -162,17 +162,9 @@ public:
             }
             if (matchedOperator) continue;
 
-            // Match braces
-            if (currentChar == '{' || currentChar == '}') {
-                addToken("brace", std::string(1, currentChar));
-                columnNumber++;
-                pos++;
-                continue;
-            }
-
-            // Match semicolon
-            if (currentChar == ';') {
-                addToken("semicolon", ";");
+            // Match braces, parentheses, and semicolon
+            if (currentChar == '{' || currentChar == '}' || currentChar == '(' || currentChar == ')' || currentChar == ';') {
+                addToken("symbol", std::string(1, currentChar));
                 columnNumber++;
                 pos++;
                 continue;
@@ -198,4 +190,3 @@ public:
         }
     }
 };
-

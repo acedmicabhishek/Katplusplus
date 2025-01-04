@@ -2,6 +2,7 @@
 #include <fstream>
 #include <filesystem>
 #include "tokenstore.hpp"
+#include "parser.hpp"
 
 int main(int argc, char* argv[]) {
     std::cout << "Compiler started\n";
@@ -38,8 +39,13 @@ int main(int argc, char* argv[]) {
 
         std::cout << "Tokenization completed successfully. Tokens:\n";
         tokenStore.printTokens();
+
+        // Parse the tokens
+        Parser parser(tokenStore.getTokens());  // Pass tokens to the parser
+        parser.parse();  // Start parsing
+
     } catch (const std::exception& e) {
-        std::cerr << "Error during tokenization: " << e.what() << std::endl;
+        std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
 
