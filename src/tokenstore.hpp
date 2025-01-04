@@ -11,8 +11,8 @@
 struct Token {
     std::string type;  // Type of the token (e.g., "identifier", "keyword", "literal", "operator")
     std::string value; // Actual value of the token
-    int line;          
-    int column;        
+    int line;
+    int column;
 };
 
 class TokenStore {
@@ -21,27 +21,27 @@ private:
     int lineNumber;
     int columnNumber;
 
-    // Helper function to add a token
-    void addToken(const std::string& type, const std::string& value) {
-        tokens.push_back({type, value, lineNumber, columnNumber});
-    }
-
     const std::unordered_set<std::string> keywords = {
         "start", "close", "intbox", "floatbox", "stringbox", "charbox",
         "boolbox", "out", "in", "if", "else", "true", "false", "endl"
     };
+
     const std::unordered_set<std::string> operators = {
         "+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "<<", ">>", "="
     };
 
-    // Regular expressions for token patterns
+    const std::unordered_set<char> symbols = {'{', '}', '(', ')', ';', ','};
+
     const std::regex identifierRegex = std::regex(R"([a-zA-Z_][a-zA-Z0-9_]*)");
     const std::regex integerRegex = std::regex(R"(\d+)");
     const std::regex floatRegex = std::regex(R"(\d+\.\d+)");
     const std::regex stringLiteralRegex = std::regex(R"("(\\.|[^"\\])*")");
     const std::regex charLiteralRegex = std::regex(R"('(\\.|[^'\\])')");
 
-    // Skipping comments
+    void addToken(const std::string& type, const std::string& value) {
+        tokens.push_back({type, value, lineNumber, columnNumber});
+    }
+
     void skipComments(const std::string& source, size_t& pos) {
         if (source.substr(pos, 2) == "//") {
             while (pos < source.size() && source[pos] != '\n') pos++;
@@ -56,14 +56,53 @@ private:
                 }
                 pos++;
             }
-            if (pos < source.size()) pos += 2; // Skip "*/"
+            if (pos >= source.size()) {
+                throw std::runtime_error("Unterminated multi-line comment starting at line " +
+                                         std::to_string(lineNumber));
+            }
+            pos += 2; // Skip "*/"
+        }
+    }
+
+    void matchStringLiteral(const std::string& source, size_t& pos) {
+        size_t start = pos++;
+        while (pos < source.size() && source[pos] != '"') {
+            if (source[pos] == '\\') pos++; // Skip escaped characters
+            pos++;
+        }
+        if (pos >= source.size() || source[pos] != '"') {
+            throw std::runtime_error("Unterminated string literal at line " + std::to_string(lineNumber));
+        }
+        pos++;
+        addToken("string_literal", source.substr(start, pos - start));
+    }
+
+    void matchCharLiteral(const std::string& source, size_t& pos) {
+        size_t start = pos++;
+        if (pos < source.size() && (source[pos] == '\\' || source[pos + 1] == '\'')) pos += 2;
+        else pos++;
+        if (pos >= source.size() || source[pos] != '\'') {
+            throw std::runtime_error("Unterminated char literal at line " + std::to_string(lineNumber));
+        }
+        pos++;
+        addToken("char_literal", source.substr(start, pos - start));
+    }
+
+    void matchNumber(const std::string& source, size_t& pos) {
+        size_t start = pos;
+        while (pos < source.size() && std::isdigit(source[pos])) pos++;
+        if (pos < source.size() && source[pos] == '.') {
+            pos++;
+            while (pos < source.size() && std::isdigit(source[pos])) pos++;
+            addToken("float_literal", source.substr(start, pos - start));
+        } else {
+            addToken("integer_literal", source.substr(start, pos - start));
         }
     }
 
 public:
     TokenStore() : lineNumber(1), columnNumber(1) {}
 
-    // Tokenize function
     void tokenize(const std::string& source) {
         size_t pos = 0;
         size_t length = source.size();
@@ -71,7 +110,7 @@ public:
         while (pos < length) {
             char currentChar = source[pos];
 
-            // Handle whitespace and track line/column numbers
+            // Handle whitespace
             if (isspace(currentChar)) {
                 if (currentChar == '\n') {
                     lineNumber++;
@@ -94,7 +133,6 @@ public:
                 size_t start = pos;
                 while (pos < length && (std::isalnum(source[pos]) || source[pos] == '_')) pos++;
                 std::string word = source.substr(start, pos - start);
-                columnNumber += (pos - start);
                 if (keywords.find(word) != keywords.end()) {
                     addToken("keyword", word);
                 } else {
@@ -103,49 +141,21 @@ public:
                 continue;
             }
 
-            // Match numbers (integer or float)
+            // Match numbers
             if (std::isdigit(currentChar)) {
-                size_t start = pos;
-                while (pos < length && std::isdigit(source[pos])) pos++;
-                if (pos < length && source[pos] == '.') {
-                    pos++;
-                    while (pos < length && std::isdigit(source[pos])) pos++;
-                    columnNumber += (pos - start);
-                    addToken("float_literal", source.substr(start, pos - start));
-                } else {
-                    columnNumber += (pos - start);
-                    addToken("integer_literal", source.substr(start, pos - start));
-                }
+                matchNumber(source, pos);
                 continue;
             }
 
             // Match string literals
             if (currentChar == '"') {
-                size_t start = pos;
-                pos++;
-                while (pos < length && source[pos] != '"') {
-                    if (source[pos] == '\\') pos++; // Skip escaped characters
-                    pos++;
-                }
-                if (pos < length && source[pos] == '"') pos++;
-                else throw std::runtime_error("Unterminated string literal at line " +
-                                              std::to_string(lineNumber));
-                columnNumber += (pos - start);
-                addToken("string_literal", source.substr(start, pos - start));
+                matchStringLiteral(source, pos);
                 continue;
             }
 
             // Match char literals
             if (currentChar == '\'') {
-                size_t start = pos;
-                pos++;
-                if (pos < length && (source[pos] == '\\' || source[pos + 1] == '\'')) pos += 2;
-                else pos++;
-                if (pos < length && source[pos] == '\'') pos++;
-                else throw std::runtime_error("Unterminated char literal at line " +
-                                              std::to_string(lineNumber));
-                columnNumber += (pos - start);
-                addToken("char_literal", source.substr(start, pos - start));
+                matchCharLiteral(source, pos);
                 continue;
             }
 
@@ -154,7 +164,6 @@ public:
             for (const std::string& op : operators) {
                 if (source.substr(pos, op.size()) == op) {
                     addToken("operator", op);
-                    columnNumber += op.size();
                     pos += op.size();
                     matchedOperator = true;
                     break;
@@ -162,10 +171,9 @@ public:
             }
             if (matchedOperator) continue;
 
-            // Match braces, parentheses, and semicolon
-            if (currentChar == '{' || currentChar == '}' || currentChar == '(' || currentChar == ')' || currentChar == ';') {
+            // Match symbols
+            if (symbols.find(currentChar) != symbols.end()) {
                 addToken("symbol", std::string(1, currentChar));
-                columnNumber++;
                 pos++;
                 continue;
             }
@@ -177,12 +185,10 @@ public:
         }
     }
 
-    // Get tokens
     const std::vector<Token>& getTokens() const {
         return tokens;
     }
 
-    // Debugging utility to print all tokens
     void printTokens() const {
         for (const auto& token : tokens) {
             std::cout << "Token(" << token.type << ", " << token.value

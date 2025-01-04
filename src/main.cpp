@@ -3,6 +3,8 @@
 #include <filesystem>
 #include "tokenstore.hpp"
 #include "parser.hpp"
+#include "generator.hpp"
+
 
 int main(int argc, char* argv[]) {
     std::cout << "Compiler started\n";
@@ -47,6 +49,24 @@ int main(int argc, char* argv[]) {
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
+    }
+
+     try {
+        // Create an instance of the CodeGenerator class
+        CodeGenerator codeGen("program.asm");
+
+        // Define the program's statements (you can parse these from your compiler or source code)
+        std::vector<std::string> statements = {
+            "intbox x = 5;",
+            "out << x;"
+        };
+
+        // Generate the assembly code
+        codeGen.generateCode(statements);
+
+        std::cout << "Assembly code generated successfully.\n";
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << "\n";
     }
 
     return 0;
