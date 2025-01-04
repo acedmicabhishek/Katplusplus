@@ -1,3 +1,7 @@
 start {
-    in >> x ;
-close}
+    intbox x = 54;
+    intbox y = 102;
+    intbox result;
+
+    close
+}
