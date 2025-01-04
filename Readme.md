@@ -1,3 +1,6 @@
+# What is Kat++
+A high level programing language designed so a new born kid can understand or write code 
+
 # How to contribute 
 
 1. create a branch 
