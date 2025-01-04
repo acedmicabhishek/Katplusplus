@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/kat_compiler.dir/link.d CMakeFiles/kat_compiler.dir/src/main.cpp.o -o kat_compiler
